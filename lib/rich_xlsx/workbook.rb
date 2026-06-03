@@ -182,10 +182,93 @@ module RichXlsx
       @writer << XML.header
       @writer << XML.strip(<<-XML)
         <styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
-          <numFmts count="#{@number_formats.size}">#{@number_formats.map.with_index{|fmt, index| %(<numFmt numFmtId="#{164 + index}" formatCode="#{XML.escape_attr(fmt)}"/>)}.join("\n")}</numFmts>
-          <fonts count="#{@fonts.size}">#{@fonts.map{|font| %(<font>#{font[:bold]? '<b/>' : ''}#{font[:italic]? '<i/>' : ''}#{font[:underline]? '<u/>' : ''}#{font[:strike]? '<strike/>' : ''}#{XML.blank?(font[:color])? '' : %(<color rgb="#{XML.escape_attr(font[:color])}"/>)}#{XML.blank?(font[:size])? '' : %(<sz val="#{XML.escape_attr(font[:size].to_s)}"/>)}#{XML.blank?(font[:name])? '' : %(<name val="#{XML.escape_attr(font[:name])}"/>)}</font>)}}</fonts>
-          <fills count="#{@fills.size}">#{@fills.map{|fill| %(<fill><patternFill patternType="#{fill[:patternType]}"#{(fill[:patternType]!='solid')? "/>" : %(>#{XML.blank?(fill[:fgColor])?'':%(<fgColor rgb="#{XML.escape_attr(fill[:fgColor])}"/>)}#{XML.blank?(fill[:bgColor])? '' : %(<fgColor rgb="#{XML.escape_attr(fill[:bgColor])}"/>)}</patternFill>)}</fill>)}.join("\n")}</fills>
-          <borders count="#{@borders.size}">#{@borders.map{|border| %(<border#{XML.blank?(border)? '/>' : %(>#{VALID_OUTLINE_BORDER_KEYS.map{|key| %(#{XML.blank?(border[key])? '' : %(<#{key}#{XML.blank?(border[key][:style])? '' : %( style="#{border[key][:style]}")}>#{XML.blank?(border[key][:color])? '' : %(<color rgb="#{XML.escape_attr(border[key][:color])}"/>)}</#{key}>)})}}#{XML.blank?(border[:diagonal])? '' : %(<diagonal#{XML.blank?(border[:diagonal][:diagonalUp])? '' : %( diagonalUp="#{(border[:diagonal][:diagonalUp])? '1' : '0'}")}#{XML.blank?(border[:diagonal][:diagonalDown])? '' : %( diagonalDown="#{(border[:diagonal][:diagonalDown])? '1' : '0'}")}>#{XML.blank?(border[:diagonal][:color])? '' : %(<color rgb="#{XML.escape_attr(border[:diagonal][:color])}"/>)}</diagonal>)}</border>)})}}</borders>
+          <numFmts count="#{@number_formats.size}">
+      XML
+      @number_formats.each_with_index do |fmt, index|
+        @writer << %(<numFmt numFmtId="#{164 + index}" formatCode="#{XML.escape_attr(fmt)}"/>)
+      end
+      @writer << XML.strip(<<-XML)
+          </numFmts>
+          <fonts count="#{@fonts.size}">
+      XML
+      @fonts.each do |font|
+        @writer << '<font>'
+        @writer << '<b/>' if font[:bold]
+        @writer << '<i/>' if font[:italic]
+        @writer << '<u/>' if font[:underline]
+        @writer << '<strike/>' if font[:strike]
+        unless XML.blank?(font[:color])
+          @writer << %(<color rgb="#{XML.escape_attr(font[:color])}"/>)
+        end
+        unless XML.blank?(font[:size])
+          @writer << %(<sz val="#{XML.escape_attr(font[:size].to_s)}"/>)
+        end
+        unless XML.blank?(font[:name])
+          @writer << %(<name val="#{XML.escape_attr(font[:name])}"/>)
+        end
+        @writer << '</font>'
+      end
+      @writer << XML.strip(<<-XML)
+          </fonts>
+          <fills count="#{@fills.size}">
+      XML
+      @fills.each do |fill|
+        @writer << '<fill><patternFill'
+        @writer << %( patternType="#{fill[:patternType]}")
+        if fill[:patternType] == 'solid'
+          @writer << '>'
+          unless XML.blank?(fill[:fgColor])
+            @writer << %(<fgColor rgb="#{XML.escape_attr(fill[:fgColor])}"/>)
+          end
+          unless XML.blank?(fill[:bgColor])
+            @writer << %(<fgColor rgb="#{XML.escape_attr(fill[:bgColor])}"/>)
+          end
+          @writer << '</patternFill></fill>'
+        else
+          @writer << '/></fill>'
+        end
+      end
+      @writer << XML.strip(<<-XML)
+          </fills>
+          <borders count="#{@borders.size}">
+      XML
+      @borders.each do |border|
+        if XML.blank?(border)
+          @writer << '<border/>'
+        else
+          @writer << '<border>'
+          VALID_OUTLINE_BORDER_KEYS.each do |key|
+            unless XML.blank?(border[key])
+              @writer << %(<#{key})
+              unless XML.blank?(border[key][:style])
+                @writer << %( style="#{border[key][:style]}")
+              end
+              @writer << '>'
+              unless XML.blank?(border[key][:color])
+                @writer << %(<color rgb="#{XML.escape_attr(border[key][:color])}"/>)
+              end
+              @writer << %(</#{key}>)
+            end
+          end
+          unless XML.blank?(border[:diagonal])
+            @writer << '<diagonal'
+            unless XML.blank?(border[:diagonal][:diagonalUp])
+              @writer << %( diagonalUp="#{border[:diagonal][:diagonalUp] ? '1' : '0'}")
+            end
+            unless XML.blank?(border[:diagonal][:diagonalDown])
+              @writer << %( diagonalDown="#{border[:diagonal][:diagonalDown] ? '1' : '0'}")
+            end
+            @writer << '>'
+            unless XML.blank?(border[:diagonal][:color])
+              @writer << %(<color rgb="#{XML.escape_attr(border[:diagonal][:color])}"/>)
+            end
+            @writer << '</diagonal>'
+          end
+          @writer << '</border>'
+        end
+      end
+      @writer << XML.strip(<<-XML)
+          </borders>
           <cellStyleXfs count="1">
             <xf numFmtId="0" fontId="0" fillId="0" borderId="0"/>
           </cellStyleXfs>
