@@ -62,7 +62,7 @@ module RichXlsx
       @options = options
       @sst = SharedStringTable.new
       @worksheets = []
-      @number_formats = [
+      @formats = [
         "yyyy\\-mm\\-dd",
         "yyyy\\-mm\\-dd hh:mm:ss"
       ]
@@ -70,25 +70,94 @@ module RichXlsx
         {
           size: @options.fetch(:font, {}).fetch(:size, 12),
           name: @options.fetch(:font, {}).fetch(:name, 'Calibri'),
-        },
+        }.freeze,
         {
           size: @options.fetch(:font, {}).fetch(:size, 12),
           name: @options.fetch(:font, {}).fetch(:name, 'Calibri'),
           bold: true
-        }
+        }.freeze
       ]
       @fills = [
         {
           patternType: 'none'
-        },
+        }.freeze,
         {
           patternType: 'gray125'
-        }
+        }.freeze
       ]
-      @borders = [{}]
-      
+      @borders = [{}.freeze]
+      @styles = [
+        {}.freeze,
+        {
+          numFmtId: 164,
+        }.freeze,
+        {
+          numFmtId: 165,
+        }.freeze,
+        {
+          fontId: 1,
+          h_align: 'center',
+          v_align: 'center'
+        }.freeze,
+        {
+          numFmtId: 164,
+          fontId: 1,
+          h_align: 'center',
+          v_align: 'center'
+        }.freeze,
+        {
+          numFmtId: 165,
+          fontId: 1,
+          h_align: 'center',
+          v_align: 'center'
+        }.freeze
+      ]
+      @worksheed_added = false
     end
 
+    def add_style(hash)
+      if @worksheed_added
+        fail Error, "Calling add_style after calling write_worksheet is not allowed."
+      end
+      style = {}
+      [
+        [:format, @formats, :numFmtId],
+        [:font, @fonts, :fontId],
+        [:fill, @fills, :fillId],
+        [:border, @borders, :borderId]
+      ].each do |tuple|
+        value_hash = hash[tuple[0]]
+        arr = tuple[1]
+        style_key = tuple[2]
+        unless XML.blank?(value_hash)
+          value_index = arr.index(value_hash)
+          if format_index.nil?
+            arr << value_hash
+            value_index = (arr.size - 1)
+          end
+          if style_key == :numFmtId
+            value_index += 164
+          end
+          style[style_key] = value_index
+        end
+      end
+      h_align = hash[:h_align]
+      unless XML.blank?(h_align)
+        style[:h_align] = h_align
+      end
+      v_align = hash[:v_align]
+      unless XML.blank?(v_align)
+        style[:v_align] = v_align
+      end
+      style.freeze
+      style_index = @styles.index(style)
+      if style_index.nil?
+        @styles << style
+        style_index = (@styles.size - 1)
+      end
+      return style_index
+    end
+    
     def add_worksheet(*args, &block)
       if block_given?
         # This method used to be an alias for `write_worksheet`. This was never publicly documented,
@@ -145,7 +214,7 @@ module RichXlsx
 
       worksheet = Worksheet.new(@writer, :id => sheet_id, :name => name, :sst => sst, :auto_format => auto_format, :columns => columns, :has_header_row => has_header_row)
       @worksheets << worksheet
-
+      @worksheed_added = true
       worksheet
     end
 
@@ -182,9 +251,9 @@ module RichXlsx
       @writer << XML.header
       @writer << XML.strip(<<-XML)
         <styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
-          <numFmts count="#{@number_formats.size}">
+          <numFmts count="#{@formats.size}">
       XML
-      @number_formats.each_with_index do |fmt, index|
+      @formats.each_with_index do |fmt, index|
         @writer << %(<numFmt numFmtId="#{164 + index}" formatCode="#{XML.escape_attr(fmt)}"/>)
       end
       @writer << XML.strip(<<-XML)
@@ -272,19 +341,23 @@ module RichXlsx
           <cellStyleXfs count="1">
             <xf numFmtId="0" fontId="0" fillId="0" borderId="0"/>
           </cellStyleXfs>
-          <cellXfs count="6">
-            <xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>
-            <xf numFmtId="164" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/>
-            <xf numFmtId="165" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/>
-            <xf numFmtId="0" fontId="1" fillId="0" borderId="0" xfId="0" applyAlignment="1">
-              <alignment horizontal="center" vertical="center"/>
-            </xf>
-            <xf numFmtId="164" fontId="1" fillId="0" borderId="0" xfId="0" applyAlignment="1" applyNumberFormat="1">
-              <alignment horizontal="center" vertical="center"/>
-            </xf>
-            <xf numFmtId="165" fontId="1" fillId="0" borderId="0" xfId="0" applyAlignment="1" applyNumberFormat="1">
-              <alignment horizontal="center" vertical="center"/>
-            </xf>
+          <cellXfs count="#{@styles.size}">
+      XML
+      @styles.each do |style|
+        @writer << %(<xf numFmtId="#{style[:numFmtId] || 0}" fontId="#{style[:fontId] || 0}" fillId="#{style[:fillId] || 0}" borderId="#{style[:borderId] || 0}" xfId="0")
+        unless XML.blank?(style[:h_align]) && XML.blank?(style[:v_align])
+          @writer << %( applyAlignment="1")
+        end
+        unless XML.blank?(style[:numFmtId])
+          @writer << %( applyNumberFormat="1")
+        end
+        unless XML.blank?(style[:h_align]) && XML.blank?(style[:v_align])
+          @writer << %(><alignment#{XML.blank?(style[:h_align])? '' : %( horizontal="#{style[:h_align]}")}#{XML.blank?(style[:v_align])? '' : %( vertical="#{style[:v_align]}")}/></xf>)
+        else
+          @writer << '/>'
+        end
+      end
+      @writer << XML.strip(<<-XML)
           </cellXfs>
           <cellStyles count="1">
             <cellStyle name="Normal" xfId="0" builtinId="0"/>
