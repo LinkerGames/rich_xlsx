@@ -2,12 +2,12 @@
 require 'test_helper'
 require 'stringio'
 require 'tempfile'
-require 'xlsxtream/workbook'
+require_relative '../../lib/rich_xlsx/workbook.rb'
 
-module Xlsxtream
+module RichXlsx
   class WorksheetTest < Minitest::Test
 
-    class SpyWriter < Xlsxtream::ZipKitWriter
+    class SpyWriter < RichXlsx::ZipKitWriter
       def initialize
         @paths_to_file_contents = {}
         @current = nil
@@ -31,7 +31,7 @@ module Xlsxtream
     end
 
     def test_workbook_from_path
-      tempfile = Tempfile.new('xlsxtream')
+      tempfile = Tempfile.new('rich_xlsx')
       Workbook.open(tempfile.path) {}
       refute_equal 0, tempfile.size
     ensure
@@ -39,7 +39,7 @@ module Xlsxtream
     end
 
     def test_workbook_from_io
-      tempfile = Tempfile.new('xlsxtream')
+      tempfile = Tempfile.new('rich_xlsx')
       Workbook.open(tempfile) {}
       refute_equal 0, tempfile.size
     ensure
@@ -289,7 +289,7 @@ module Xlsxtream
       end
 
       iow_spy2 = io_wrapper_spy
-      assert_raises(Xlsxtream::Error) do
+      assert_raises(RichXlsx::Error) do
         Workbook.open(iow_spy2) do |wb|
           wb.add_worksheet
           wb.add_worksheet # adding a second worksheet without closing
@@ -466,45 +466,6 @@ module Xlsxtream
       expected = '<name val="Comic Sans"/>'
       actual = iow_spy['xl/styles.xml'][/<name [^>]+>/]
       assert_equal expected, actual
-    end
-
-    def test_custom_font_family
-      iow_spy = io_wrapper_spy
-      font_options = { :family => 'Script' }
-      Workbook.open(iow_spy, :font => font_options) {}
-      expected = '<family val="4"/>'
-      actual = iow_spy['xl/styles.xml'][/<family [^>]+>/]
-      assert_equal expected, actual
-    end
-
-    def test_font_family_mapping
-      tests = {
-        nil => 0,
-        ''  => 0,
-        'ROMAN' => 1,
-        :roman => 1,
-        'Roman' => 1,
-        :swiss => 2,
-        :modern => 3,
-        :script => 4,
-        :decorative => 5
-      }
-      tests.each do |value, id|
-        iow_spy = io_wrapper_spy
-        font_options = { :family => value }
-        Workbook.open(iow_spy, :font => font_options) {}
-        expected = "<family val=\"#{id}\"/>"
-        actual = iow_spy['xl/styles.xml'][/<family [^>]+>/]
-        assert_equal expected, actual
-      end
-    end
-
-    def test_invalid_font_family
-      iow_spy = io_wrapper_spy
-      font_options = { :family => 'Foo' }
-      assert_raises Xlsxtream::Error do
-        Workbook.open(iow_spy, :font => font_options) {}
-      end
     end
 
     def test_tempfile_is_not_closed

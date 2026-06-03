@@ -1,5 +1,5 @@
 # frozen_string_literal: true
-module Xlsxtream
+module RichXlsx
   class Error < StandardError; end
   class Deprecation < StandardError; end
 end

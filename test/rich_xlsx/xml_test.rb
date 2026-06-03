@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 require 'test_helper'
-require 'xlsxtream/xml'
+require_relative '../../lib/rich_xlsx/xml.rb'
 
-module Xlsxtream
+module RichXlsx
   class XMLTest < Minitest::Test
     def test_header
       expected = %'<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\r\n'

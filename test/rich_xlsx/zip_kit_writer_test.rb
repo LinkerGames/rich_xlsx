@@ -2,12 +2,12 @@
 require 'test_helper'
 require 'zip'
 
-module Xlsxtream
+module RichXlsx
   class ZipKitWriterTest < Minitest::Test
     def test_writes_of_multiple_files
       zip_buf = Tempfile.new('ztio-test')
 
-      io = Xlsxtream::ZipKitWriter.with_output_to(zip_buf)
+      io = RichXlsx::ZipKitWriter.with_output_to(zip_buf)
       io.add_file("book1.xml")
       io << '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook />'
       io.add_file("book2.xml")
@@ -32,8 +32,8 @@ module Xlsxtream
     end
 
     def test_with_output_to_wraps_another_writer
-      another_writer = Xlsxtream::ZipKitWriter.new(ZipKit::Streamer.new(StringIO.new))
-      assert_equal another_writer, Xlsxtream::ZipKitWriter.with_output_to(another_writer)
+      another_writer = RichXlsx::ZipKitWriter.new(ZipKit::Streamer.new(StringIO.new))
+      assert_equal another_writer, RichXlsx::ZipKitWriter.with_output_to(another_writer)
     end
 
     def test_with_output_to_wraps_a_zip_kit_streamer_and_does_not_close_it_on_close
@@ -43,14 +43,14 @@ module Xlsxtream
         end
       end.new(StringIO.new)
 
-      writer = Xlsxtream::ZipKitWriter.new(streamer_that_raises)
+      writer = RichXlsx::ZipKitWriter.new(streamer_that_raises)
       writer.close
     end
 
     def test_with_output_to_creates_a_file_with_a_given_path
       Dir.mktmpdir do |dir_path|
         tf_name = "output.xlsx"
-        writer = Xlsxtream::ZipKitWriter.with_output_to(File.join(dir_path, tf_name))
+        writer = RichXlsx::ZipKitWriter.with_output_to(File.join(dir_path, tf_name))
         assert File.exist?(File.join(dir_path, tf_name))
         writer.close
 
@@ -62,21 +62,21 @@ module Xlsxtream
       tf = Tempfile.new
       assert tf.size == 0
       pathname = Pathname.new(tf.path)
-      writer = Xlsxtream::ZipKitWriter.with_output_to(pathname)
+      writer = RichXlsx::ZipKitWriter.with_output_to(pathname)
       writer.close
       assert tf.size > 0
     end
 
     def test_with_output_to_writes_into_io
       io = StringIO.new
-      writer = Xlsxtream::ZipKitWriter.with_output_to(io)
+      writer = RichXlsx::ZipKitWriter.with_output_to(io)
       writer.close
       assert io.size > 0
     end
 
     def test_with_output_to_raises_on_unwritable_arg
       assert_raises ArgumentError do
-        Xlsxtream::ZipKitWriter.with_output_to(:sym)
+        RichXlsx::ZipKitWriter.with_output_to(:sym)
       end
     end
   end

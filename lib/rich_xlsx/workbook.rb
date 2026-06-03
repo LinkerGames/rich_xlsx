@@ -1,22 +1,45 @@
 # frozen_string_literal: true
-require "xlsxtream/errors"
-require "xlsxtream/xml"
-require "xlsxtream/shared_string_table"
-require "xlsxtream/worksheet"
-require "xlsxtream/zip_kit_writer"
+require "set"
+require_relative "errors.rb"
+require_relative "xml.rb"
+require_relative "shared_string_table.rb"
+require_relative "worksheet.rb"
+require_relative "zip_kit_writer.rb"
 
-module Xlsxtream
+module RichXlsx
   class Workbook
 
-    FONT_FAMILY_IDS = {
-      ''           => 0,
-      'roman'      => 1,
-      'swiss'      => 2,
-      'modern'     => 3,
-      'script'     => 4,
-      'decorative' => 5
-    }.freeze
-
+    VALID_BORDER_KEYS = Set.new([
+      :left,
+      :right,
+      :top,
+      :bottom,
+      :diagonal
+    ]).freeze
+    
+    VALID_OUTLINE_BORDER_KEYS = [
+      :left,
+      :right,
+      :top,
+      :bottom
+    ].freeze
+    
+    VALID_BORDER_STYLES = Set.new([
+      'thin',
+      'medium',
+      'thick',
+      'dashed',
+      'dotted',
+      'double',
+      'hair',
+      'mediumDashed',
+      'dashDot',
+      'mediumDashDot',
+      'dashDotDot',
+      'mediumDashDotDot',
+      'slantDashDot',
+    ]).freeze
+    
     class << self
 
       def open(output, options = {})
@@ -39,6 +62,31 @@ module Xlsxtream
       @options = options
       @sst = SharedStringTable.new
       @worksheets = []
+      @number_formats = [
+        "yyyy\\-mm\\-dd",
+        "yyyy\\-mm\\-dd hh:mm:ss"
+      ]
+      @fonts = [
+        {
+          size: @options.fetch(:font, {}).fetch(:size, 12),
+          name: @options.fetch(:font, {}).fetch(:name, 'Calibri'),
+        },
+        {
+          size: @options.fetch(:font, {}).fetch(:size, 12),
+          name: @options.fetch(:font, {}).fetch(:name, 'Calibri'),
+          bold: true
+        }
+      ]
+      @fills = [
+        {
+          patternType: 'none'
+        },
+        {
+          patternType: 'gray125'
+        }
+      ]
+      @borders = [{}]
+      
     end
 
     def add_worksheet(*args, &block)
@@ -130,46 +178,14 @@ module Xlsxtream
     end
 
     def write_styles
-      font_options = @options.fetch(:font, {})
-      font_size = font_options.fetch(:size, 12).to_s
-      font_name = font_options.fetch(:name, 'Calibri').to_s
-      font_family = font_options.fetch(:family, 'Swiss').to_s.downcase
-      font_family_id = FONT_FAMILY_IDS[font_family] or fail Error,
-        "Invalid font family #{font_family}, must be one of "\
-        + FONT_FAMILY_IDS.keys.map(&:inspect).join(', ')
-
       @writer.add_file "xl/styles.xml"
       @writer << XML.header
       @writer << XML.strip(<<-XML)
         <styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
-          <numFmts count="2">
-            <numFmt numFmtId="164" formatCode="yyyy\\-mm\\-dd"/>
-            <numFmt numFmtId="165" formatCode="yyyy\\-mm\\-dd hh:mm:ss"/>
-          </numFmts>
-          <fonts count="2">
-            <font>
-              <sz val="#{XML.escape_attr font_size}"/>
-              <name val="#{XML.escape_attr font_name}"/>
-              <family val="#{font_family_id}"/>
-            </font>
-            <font>
-              <b val="1"/>
-              <sz val="#{XML.escape_attr font_size}"/>
-              <name val="#{XML.escape_attr font_name}"/>
-              <family val="#{font_family_id}"/>
-            </font>
-          </fonts>
-          <fills count="2">
-            <fill>
-              <patternFill patternType="none"/>
-            </fill>
-            <fill>
-              <patternFill patternType="gray125"/>
-            </fill>
-          </fills>
-          <borders count="1">
-            <border/>
-          </borders>
+          <numFmts count="#{@number_formats.size}">#{@number_formats.map.with_index{|fmt, index| %(<numFmt numFmtId="#{164 + index}" formatCode="#{XML.escape_attr(fmt)}"/>)}.join("\n")}</numFmts>
+          <fonts count="#{@fonts.size}">#{@fonts.map{|font| %(<font>#{font[:bold]? '<b/>' : ''}#{font[:italic]? '<i/>' : ''}#{font[:underline]? '<u/>' : ''}#{font[:strike]? '<strike/>' : ''}#{XML.blank?(font[:color])? '' : %(<color rgb="#{XML.escape_attr(font[:color])}"/>)}#{XML.blank?(font[:size])? '' : %(<sz val="#{XML.escape_attr(font[:size].to_s)}"/>)}#{XML.blank?(font[:name])? '' : %(<name val="#{XML.escape_attr(font[:name])}"/>)}</font>)}}</fonts>
+          <fills count="#{@fills.size}">#{@fills.map{|fill| %(<fill><patternFill patternType="#{fill[:patternType]}"#{(fill[:patternType]!='solid')? "/>" : %(>#{XML.blank?(fill[:fgColor])?'':%(<fgColor rgb="#{XML.escape_attr(fill[:fgColor])}"/>)}#{XML.blank?(fill[:bgColor])? '' : %(<fgColor rgb="#{XML.escape_attr(fill[:bgColor])}"/>)}</patternFill>)}</fill>)}.join("\n")}</fills>
+          <borders count="#{@borders.size}">#{@borders.map{|border| %(<border#{XML.blank?(border)? '/>' : %(>#{VALID_OUTLINE_BORDER_KEYS.map{|key| %(#{XML.blank?(border[key])? '' : %(<#{key}#{XML.blank?(border[key][:style])? '' : %( style="#{border[key][:style]}")}>#{XML.blank?(border[key][:color])? '' : %(<color rgb="#{XML.escape_attr(border[key][:color])}"/>)}</#{key}>)})}}#{XML.blank?(border[:diagonal])? '' : %(<diagonal#{XML.blank?(border[:diagonal][:diagonalUp])? '' : %( diagonalUp="#{(border[:diagonal][:diagonalUp])? '1' : '0'}")}#{XML.blank?(border[:diagonal][:diagonalDown])? '' : %( diagonalDown="#{(border[:diagonal][:diagonalDown])? '1' : '0'}")}>#{XML.blank?(border[:diagonal][:color])? '' : %(<color rgb="#{XML.escape_attr(border[:diagonal][:color])}"/>)}</diagonal>)}</border>)})}}</borders>
           <cellStyleXfs count="1">
             <xf numFmtId="0" fontId="0" fillId="0" borderId="0"/>
           </cellStyleXfs>

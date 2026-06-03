@@ -1,5 +1,5 @@
 # frozen_string_literal: true
-module Xlsxtream
+module RichXlsx
   class SharedStringTable < Hash
     def initialize
       @references = 0

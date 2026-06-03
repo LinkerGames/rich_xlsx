@@ -1,5 +1,5 @@
 # frozen_string_literal: true
-module Xlsxtream
+module RichXlsx
   class Columns
 
     # Pass an Array of column options Hashes. Symbol Hash keys and associated

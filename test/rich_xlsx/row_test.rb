@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 require 'test_helper'
-require 'xlsxtream/row'
+require_relative '../../lib/rich_xlsx/row.rb'
 
-module Xlsxtream
+module RichXlsx
   class RowTest < Minitest::Test
 
     # =========================================================================

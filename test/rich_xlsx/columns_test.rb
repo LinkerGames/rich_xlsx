@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 require 'test_helper'
-require 'xlsxtream/row'
+require_relative '../../lib/rich_xlsx/row.rb'
 
-module Xlsxtream
+module RichXlsx
   class ColumnsTest < Minitest::Test
     def test_no_width_column
       column = Columns.new( [ {} ] )

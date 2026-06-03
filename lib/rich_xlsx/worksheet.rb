@@ -1,8 +1,8 @@
 # frozen_string_literal: true
-require "xlsxtream/xml"
-require "xlsxtream/row"
+require_relative "xml.rb"
+require_relative "row.rb"
 
-module Xlsxtream
+module RichXlsx
   class Worksheet
     def initialize(io, options = {})
       @io = io
@@ -42,25 +42,18 @@ module Xlsxtream
 
     def write_header
       @io << XML.header
-      @io << XML.strip(<<-XML)
-        <worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
-      XML
+      @io << '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
 
       columns = Array(@options[:columns])
       unless columns.empty?
         @io << Columns.new(columns).to_xml
       end
 
-      @io << XML.strip(<<-XML)
-          <sheetData>
-      XML
+      @io << '<sheetData>'
     end
 
     def write_footer
-      @io << XML.strip(<<-XML)
-          </sheetData>
-        </worksheet>
-      XML
+      @io << '</sheetData></worksheet>'
     end
   end
 end

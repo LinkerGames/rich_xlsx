@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 require 'test_helper'
-require 'xlsxtream/shared_string_table'
+require_relative '../../lib/rich_xlsx/shared_string_table.rb'
 
-module Xlsxtream
+module RichXlsx
   class SharedStringTableTest < Minitest::Test
     def test_references
       sst = SharedStringTable.new

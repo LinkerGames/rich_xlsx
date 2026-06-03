@@ -1,24 +1,18 @@
-# Xlsxtream
+# RichXlsx
 
-[![Gem Version](https://badge.fury.io/rb/xlsxtream.svg)](https://rubygems.org/gems/xlsxtream)
+RichXlsx is a streaming writer for XLSX spreadsheets. It started as a fork of the [xlsxtream](https://github.com/felixbuenemann/xlsxtream/branches). It supports multiple worksheets and optional string deduplication via a shared string table (SST). Its purpose is to replace CSV for large exports, because manually importing CSV in Excel is inconvenient and error prone. It's very efficient and can quickly write millions of rows with low memory usage.
 
-Xlsxtream is a streaming writer for XLSX spreadsheets. It supports multiple worksheets and optional string
-deduplication via a shared string table (SST). Its purpose is to replace CSV for large exports, because using
-CSV in Excel is very buggy and error prone. It's very efficient and can quickly write millions of rows with
-low memory usage.
-
-Xlsxtream does not support formatting, charts, comments and a myriad of
-other [OOXML](https://en.wikipedia.org/wiki/Office_Open_XML) features. If you are looking for a
+RichXlsx does not support all [OOXML](https://en.wikipedia.org/wiki/Office_Open_XML) features, just the ones that make sense if you regularly export a lot of rows. If you are looking for a
 fully featured solution take a look at [caxslx](https://github.com/caxlsx/caxlsx).
 
-Xlsxtream supports writing to files or IO-like objects, data is flushed as the ZIP compressor sees fit.
+RichXlsx supports writing to files or IO-like objects, data is flushed as the ZIP compressor sees fit.
 
 ## Installation
 
 Add this line to your application's Gemfile:
 
 ```ruby
-gem 'xlsxtream'
+gem 'rich_xlsx'
 ```
 
 And then execute:
@@ -27,13 +21,13 @@ And then execute:
 
 Or install it yourself as:
 
-    $ gem install xlsxtream
+    $ gem install rich_xlsx
 
 ## Usage
 
 ```ruby
 # Creates a new workbook file, write and close it at the end of the block
-Xlsxtream::Workbook.open('my_data.xlsx') do |xlsx|
+RichXlsx::Workbook.open('my_data.xlsx') do |xlsx|
   xlsx.write_worksheet 'Sheet1' do |sheet|
     # Boolean, Date, Time, DateTime and Numeric are properly mapped
     sheet << [true, Date.today, 'hello', 'world', 42, 3.14159265359, 42**13]
@@ -41,7 +35,7 @@ Xlsxtream::Workbook.open('my_data.xlsx') do |xlsx|
 end
 
 io = StringIO.new
-xlsx = Xlsxtream::Workbook.new(io)
+xlsx = RichXlsx::Workbook.new(io)
 
 # Number of columns doesn't have to match
 xlsx.write_worksheet 'Sheet1' do |sheet|
@@ -90,20 +84,20 @@ xlsx.close
 io.close
 
 # Changing the default font from Calibri, 12pt, Swiss
-Xlsxtream::Workbook.new(io, font: {
+RichXlsx::Workbook.new(io, font: {
   name: 'Times New Roman',
   size: 10, # size in pt
   family: 'Roman' # Swiss, Modern, Script, Decorative
 })
 
 # Treat the first output row as a header, using bold and centred text
-Xlsxtream::Workbook.new(io, has_header_row: true)
+RichXlsx::Workbook.new(io, has_header_row: true)
 
 # Specifying column widths in pixels or characters; 3 column example;
 # "pixel" widths appear to be *relative* to an assumed 11pt Calibri
 # font, so if selecting a different font or size (see above), do not
 # adjust widths to match. Calculate pixel widths for 11pt Calibri.
-Xlsxtream::Workbook.new(io, columns: [
+RichXlsx::Workbook.new(io, columns: [
   { width_pixels: 33 },
   { width_chars: 7 },
   { width_chars: 24 }
@@ -119,7 +113,7 @@ class ReportsController < ApplicationController
 
   def download
     zip_kit_stream(filename: "report.xlsx", type: EXCEL_CONTENT_TYPE) do |zip_kit_streamer|
-      Xlsxtream::Workbook.open(zip_kit_streamer) do |xlsx|
+      RichXlsx::Workbook.open(zip_kit_streamer) do |xlsx|
         xlsx.write_worksheet 'Sheet1' do |sheet|
           # Boolean, Date, Time, DateTime and Numeric are properly mapped
           sheet << [true, Date.today, 'hello', 'world', 42, 3.14159265359, 42**13]
@@ -132,13 +126,7 @@ end
 
 ## Compatibility
 
-The current version of Xlsxtream requires at least Ruby 2.6
-
-If you are using an older Ruby version you can use the following in your Gemfile:
-
-```ruby
-gem 'xlsxtream', '< 3'
-```
+The current version of RichXlsx requires at least Ruby 2.6. It should also run on JRuby 9.4.14.0 and above, including JRuby 10 versions.
 
 ## Development
 
@@ -148,7 +136,7 @@ To install this gem onto your local machine, run `bundle exec rake install`. To 
 
 ## Contributing
 
-Bug reports and pull requests are welcome on GitHub at https://github.com/felixbuenemann/xlsxtream.
+Bug reports and pull requests are welcome on GitHub at https://github.com/LinkerGames/rich_xlsx.
 
 
 ## License

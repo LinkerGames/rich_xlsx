@@ -1,9 +1,9 @@
 # frozen_string_literal: true
 require 'test_helper'
 require 'stringio'
-require 'xlsxtream/worksheet'
+require_relative '../../lib/rich_xlsx/worksheet.rb'
 
-module Xlsxtream
+module RichXlsx
   class WorksheetTest < Minitest::Test
     def test_empty_worksheet
       io = StringIO.new

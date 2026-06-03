@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 require "date"
-require "xlsxtream/xml"
+require_relative "xml.rb"
 
-module Xlsxtream
+module RichXlsx
   class Row
 
     ENCODING = Encoding.find('UTF-8')

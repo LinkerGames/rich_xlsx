@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 require "zip_kit"
 
-module Xlsxtream
+module RichXlsx
   class ZipKitWriter
     BUFFER_SIZE = 64 * 1024
 

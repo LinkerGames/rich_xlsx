@@ -1,5 +1,5 @@
 # frozen_string_literal: true
-module Xlsxtream
+module RichXlsx
   module XML
     XML_ESCAPES = {
       '&' => '&amp;',
@@ -47,6 +47,9 @@ module Xlsxtream
           .gsub(INVALID_XML10_CHARS, &ESCAPE_CHAR)
       end
 
+      def blank?(object)
+        object.respond_to?(:empty?) ? !!object.empty? : !object
+      end
     end
   end
 end
