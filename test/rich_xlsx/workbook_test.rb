@@ -403,13 +403,11 @@ module RichXlsx
             '<font>' \
               '<sz val="12"/>' \
               '<name val="Calibri"/>' \
-              '<family val="2"/>' \
             '</font>' \
             '<font>' \
-              '<b val="1"/>' \
+              '<b/>' \
               '<sz val="12"/>' \
               '<name val="Calibri"/>' \
-              '<family val="2"/>' \
             '</font>' \
           '</fonts>' \
           '<fills count="2">' \
