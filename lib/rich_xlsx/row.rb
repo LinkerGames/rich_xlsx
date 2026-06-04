@@ -41,22 +41,47 @@ module RichXlsx
       @row.each do |value|
         cid = "#{column}#{@rownum}"
         column.next!
-
+        style = nil
+        if value.is_a?(Array)
+          if value.size != 2
+            raise "The [value, format] tuple should be an array with exactly 2 elements."
+          end
+          format_index = value[1]
+          if (!format_index.is_a?(Numeric)) || (format_index < 0)
+            raise "Invalid format index #{format_index}."
+          end
+          value = value[0]
+          if format_index != 0
+            style = " s=\"#{format_index.to_i}\""
+          end
+        end
+        
         if @auto_format && value.is_a?(String)
           value = auto_format(value)
         end
 
+        if style.nil?
+          case value
+          when Time, DateTime
+            style = time_style
+          when Date
+            style = date_style
+          else
+            style = normal_style
+          end
+        end
+        
         case value
         when Numeric
-          xml << %Q{<c r="#{cid}"#{normal_style} t="n"><v>#{value}</v></c>}
+          xml << %Q{<c r="#{cid}"#{style} t="n"><v>#{value}</v></c>}
         when TrueClass, FalseClass
-          xml << %Q{<c r="#{cid}"#{normal_style} t="b"><v>#{value ? 1 : 0}</v></c>}
+          xml << %Q{<c r="#{cid}"#{style} t="b"><v>#{value ? 1 : 0}</v></c>}
         when Time
-          xml << %Q{<c r="#{cid}"#{time_style}><v>#{time_to_oa_date(value)}</v></c>}
+          xml << %Q{<c r="#{cid}"#{style}><v>#{time_to_oa_date(value)}</v></c>}
         when DateTime
-          xml << %Q{<c r="#{cid}"#{time_style}><v>#{datetime_to_oa_date(value)}</v></c>}
+          xml << %Q{<c r="#{cid}"#{style}><v>#{datetime_to_oa_date(value)}</v></c>}
         when Date
-          xml << %Q{<c r="#{cid}"#{date_style}><v>#{date_to_oa_date(value)}</v></c>}
+          xml << %Q{<c r="#{cid}"#{style}><v>#{date_to_oa_date(value)}</v></c>}
         else
           value = value.to_s
 
@@ -64,9 +89,9 @@ module RichXlsx
             value = value.encode(ENCODING) if value.encoding != ENCODING
 
             if @sst
-              xml << %Q{<c r="#{cid}"#{normal_style} t="s"><v>#{@sst[value]}</v></c>}
+              xml << %Q{<c r="#{cid}"#{style} t="s"><v>#{@sst[value]}</v></c>}
             else
-              xml << %Q{<c r="#{cid}"#{normal_style} t="inlineStr"><is><t>#{XML.escape_value(value)}</t></is></c>}
+              xml << %Q{<c r="#{cid}"#{style} t="inlineStr"><is><t>#{XML.escape_value(value)}</t></is></c>}
             end
           end
         end

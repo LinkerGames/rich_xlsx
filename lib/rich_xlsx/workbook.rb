@@ -40,6 +40,25 @@ module RichXlsx
       'slantDashDot',
     ]).freeze
     
+    VALID_HORIZONTAL_ALIGNMENTS = Set.new([
+      'general',
+      'left',
+      'center',
+      'right',
+      'fill',
+      'justify',
+      'centerContinuous',
+      'distributed'
+    ]).freeze
+    
+    VALID_VERTICAL_ALIGNMENTS = Set.new([
+      'top',
+      'center',
+      'bottom',
+      'justify',
+      'distributed'
+    ]).freeze
+    
     class << self
 
       def open(output, options = {})
@@ -131,7 +150,7 @@ module RichXlsx
         style_key = tuple[2]
         unless XML.blank?(value_hash)
           value_index = arr.index(value_hash)
-          if format_index.nil?
+          if value_index.nil?
             arr << value_hash
             value_index = (arr.size - 1)
           end
@@ -143,11 +162,19 @@ module RichXlsx
       end
       h_align = hash[:h_align]
       unless XML.blank?(h_align)
-        style[:h_align] = h_align
+        if VALID_HORIZONTAL_ALIGNMENTS.include?(h_align)
+          style[:h_align] = h_align
+        else
+          raise "Invalid value for h_align #{h_align.inspect}"
+        end
       end
       v_align = hash[:v_align]
       unless XML.blank?(v_align)
-        style[:v_align] = v_align
+        if VALID_VERTICAL_ALIGNMENTS.include?(v_align)
+          style[:v_align] = v_align
+        else
+          raise "Invalid value for v_align #{v_align.inspect}"
+        end
       end
       style.freeze
       style_index = @styles.index(style)
@@ -284,13 +311,13 @@ module RichXlsx
       @fills.each do |fill|
         @writer << '<fill><patternFill'
         @writer << %( patternType="#{fill[:patternType]}")
-        if fill[:patternType] == 'solid'
+        unless XML.blank?(fill[:fgColor]) && XML.blank?(fill[:bgColor])
           @writer << '>'
           unless XML.blank?(fill[:fgColor])
             @writer << %(<fgColor rgb="#{XML.escape_attr(fill[:fgColor])}"/>)
           end
           unless XML.blank?(fill[:bgColor])
-            @writer << %(<fgColor rgb="#{XML.escape_attr(fill[:bgColor])}"/>)
+            @writer << %(<bgColor rgb="#{XML.escape_attr(fill[:bgColor])}"/>)
           end
           @writer << '</patternFill></fill>'
         else
@@ -305,7 +332,16 @@ module RichXlsx
         if XML.blank?(border)
           @writer << '<border/>'
         else
-          @writer << '<border>'
+          @writer << '<border'
+          unless XML.blank?(border[:diagonal])
+            unless XML.blank?(border[:diagonal][:diagonalUp])
+              @writer << %( diagonalUp="#{border[:diagonal][:diagonalUp] ? '1' : '0'}")
+            end
+            unless XML.blank?(border[:diagonal][:diagonalDown])
+              @writer << %( diagonalDown="#{border[:diagonal][:diagonalDown] ? '1' : '0'}")
+            end
+          end
+          @writer << '>'
           VALID_OUTLINE_BORDER_KEYS.each do |key|
             unless XML.blank?(border[key])
               @writer << %(<#{key})
@@ -319,13 +355,10 @@ module RichXlsx
               @writer << %(</#{key}>)
             end
           end
-          unless XML.blank?(border[:diagonal])
+          unless XML.blank?(border[:diagonal]) || (XML.blank?(border[:diagonal][:diagonalUp]) && XML.blank?(border[:diagonal][:diagonalDown]))
             @writer << '<diagonal'
-            unless XML.blank?(border[:diagonal][:diagonalUp])
-              @writer << %( diagonalUp="#{border[:diagonal][:diagonalUp] ? '1' : '0'}")
-            end
-            unless XML.blank?(border[:diagonal][:diagonalDown])
-              @writer << %( diagonalDown="#{border[:diagonal][:diagonalDown] ? '1' : '0'}")
+            unless XML.blank?(border[:diagonal][:style])
+              @writer << %( style="#{border[:diagonal][:style]}")
             end
             @writer << '>'
             unless XML.blank?(border[:diagonal][:color])

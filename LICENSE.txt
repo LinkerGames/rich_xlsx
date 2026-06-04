@@ -1,6 +1,6 @@
 The MIT License (MIT)
 
-Copyright (c) 2015-2024 Felix Bünemann
+Copyright (c) 2015-2025 Felix Bünemann
 Copyright (c) 2026 Linker Games OOD
 
 Permission is hereby granted, free of charge, to any person obtaining a copy

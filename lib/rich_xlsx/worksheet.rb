@@ -10,7 +10,7 @@ module RichXlsx
       @closed = false
       @options = options
       @has_header_row = options.delete(:has_header_row)
-
+      @merge_cells = []
       write_header
     end
 
@@ -21,6 +21,12 @@ module RichXlsx
     end
     alias_method :add_row, :<<
 
+    def merge(top_left, bottom_right)
+      @merge_cells << "#{top_left}:#{bottom_right}"
+    end
+    
+    alias_method :merge_cells, :merge
+    
     def close
       write_footer
       @closed = true
@@ -53,7 +59,15 @@ module RichXlsx
     end
 
     def write_footer
-      @io << '</sheetData></worksheet>'
+      @io << '</sheetData>'
+      unless XML.blank?(@merge_cells)
+        @io << '<mergeCells>'
+        @merge_cells.each do |ref|
+          @io << %(<mergeCell ref="#{XML.escape_attr(ref)}"/>)
+        end
+        @io << '</mergeCells>'
+      end
+      @io << '</worksheet>'
     end
   end
 end

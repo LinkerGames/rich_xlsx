@@ -1,10 +1,10 @@
 # frozen_string_literal: true
-require "rich_xlsx/version"
+require_relative "rich_xlsx/version.rb"
 
 module RichXlsx
 end
 
-require "rich_xlsx/workbook"
-require "rich_xlsx/worksheet"
-require "rich_xlsx/columns"
-require "rich_xlsx/row"
+require_relative "rich_xlsx/workbook.rb"
+require_relative "rich_xlsx/worksheet.rb"
+require_relative "rich_xlsx/columns.rb"
+require_relative "rich_xlsx/row.rb"
