@@ -176,6 +176,10 @@ module RichXlsx
           raise "Invalid value for v_align #{v_align.inspect}"
         end
       end
+      word_wrap = hash[:word_wrap]
+      if word_wrap == true
+        style[:word_wrap] = true
+      end
       style.freeze
       style_index = @styles.index(style)
       if style_index.nil?
@@ -378,14 +382,14 @@ module RichXlsx
       XML
       @styles.each do |style|
         @writer << %(<xf numFmtId="#{style[:numFmtId] || 0}" fontId="#{style[:fontId] || 0}" fillId="#{style[:fillId] || 0}" borderId="#{style[:borderId] || 0}" xfId="0")
-        unless XML.blank?(style[:h_align]) && XML.blank?(style[:v_align])
+        unless XML.blank?(style[:h_align]) && XML.blank?(style[:v_align]) && XML.blank?(style[:word_wrap])
           @writer << %( applyAlignment="1")
         end
         unless XML.blank?(style[:numFmtId])
           @writer << %( applyNumberFormat="1")
         end
-        unless XML.blank?(style[:h_align]) && XML.blank?(style[:v_align])
-          @writer << %(><alignment#{XML.blank?(style[:h_align])? '' : %( horizontal="#{style[:h_align]}")}#{XML.blank?(style[:v_align])? '' : %( vertical="#{style[:v_align]}")}/></xf>)
+        unless XML.blank?(style[:h_align]) && XML.blank?(style[:v_align]) && XML.blank?(style[:word_wrap])
+          @writer << %(><alignment#{XML.blank?(style[:h_align])? '' : %( horizontal="#{style[:h_align]}")}#{XML.blank?(style[:v_align])? '' : %( vertical="#{style[:v_align]}")}#{XML.blank?(style[:word_wrap])? '' : ' textWrap="1"'}/></xf>)
         else
           @writer << '/>'
         end
