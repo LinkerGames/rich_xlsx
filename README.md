@@ -108,10 +108,9 @@ RichXlsx::Workbook.new(io, columns: [
 # Output from Rails (will stream without buffering)
 class ReportsController < ApplicationController
   include ZipKit::RailsStreaming
-  EXCEL_CONTENT_TYPE = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 
   def download
-    zip_kit_stream(filename: "report.xlsx", type: EXCEL_CONTENT_TYPE) do |zip_kit_streamer|
+    zip_kit_stream(filename: "report.xlsx", type: RichXlsx::EXCEL_CONTENT_TYPE) do |zip_kit_streamer|
       RichXlsx::Workbook.open(zip_kit_streamer) do |xlsx|
         xlsx.write_worksheet 'Sheet1' do |sheet|
           # Boolean, Date, Time, DateTime and Numeric are properly mapped
