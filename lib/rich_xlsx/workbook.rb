@@ -389,7 +389,7 @@ module RichXlsx
           @writer << %( applyNumberFormat="1")
         end
         unless XML.blank?(style[:h_align]) && XML.blank?(style[:v_align]) && XML.blank?(style[:word_wrap])
-          @writer << %(><alignment#{XML.blank?(style[:h_align])? '' : %( horizontal="#{style[:h_align]}")}#{XML.blank?(style[:v_align])? '' : %( vertical="#{style[:v_align]}")}#{XML.blank?(style[:word_wrap])? '' : ' textWrap="1"'}/></xf>)
+          @writer << %(><alignment#{XML.blank?(style[:h_align])? '' : %( horizontal="#{style[:h_align]}")}#{XML.blank?(style[:v_align])? '' : %( vertical="#{style[:v_align]}")}#{XML.blank?(style[:word_wrap])? '' : ' wrapText="1"'}/></xf>)
         else
           @writer << '/>'
         end

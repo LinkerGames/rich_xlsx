@@ -724,7 +724,7 @@ module RichXlsx
               <alignment horizontal="center" vertical="center"/>
             </xf>
             <xf numFmtId="0" fontId="4" fillId="4" borderId="0" xfId="0" applyAlignment="1">
-              <alignment horizontal="center" vertical="center" textWrap="1"/>
+              <alignment horizontal="center" vertical="center" wrapText="1"/>
             </xf>
             <xf numFmtId="167" fontId="5" fillId="0" borderId="3" xfId="0" applyAlignment="1" applyNumberFormat="1">
               <alignment horizontal="right" vertical="top"/>
