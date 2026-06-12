@@ -401,12 +401,12 @@ module RichXlsx
           '</numFmts>' \
           '<fonts count="2">' \
             '<font>' \
-              '<sz val="12"/>' \
+              '<sz val="11"/>' \
               '<name val="Calibri"/>' \
             '</font>' \
             '<font>' \
               '<b/>' \
-              '<sz val="12"/>' \
+              '<sz val="11"/>' \
               '<name val="Calibri"/>' \
             '</font>' \
           '</fonts>' \

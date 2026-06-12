@@ -87,11 +87,11 @@ module RichXlsx
       ]
       @fonts = [
         {
-          size: @options.fetch(:font, {}).fetch(:size, 12),
+          size: @options.fetch(:font, {}).fetch(:size, 11),
           name: @options.fetch(:font, {}).fetch(:name, 'Calibri'),
         }.freeze,
         {
-          size: @options.fetch(:font, {}).fetch(:size, 12),
+          size: @options.fetch(:font, {}).fetch(:size, 11),
           name: @options.fetch(:font, {}).fetch(:name, 'Calibri'),
           bold: true
         }.freeze
