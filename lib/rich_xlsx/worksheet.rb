@@ -14,7 +14,7 @@ module RichXlsx
       write_header
     end
 
-    def <<(row, common_cell_style = nil)
+    def <<(row, common_cell_style = nil, custom_height = nil)
       options = @has_header_row && @rownum == 1 ? @options.merge(:is_header => true) : @options
       if common_cell_style.nil?
         @io << Row.new(row, @rownum, options).to_xml
@@ -22,7 +22,14 @@ module RichXlsx
         if common_cell_style < 0
           raise "Invalid value for common_cell_style (#{common_cell_style}). Must be a non-negative integer obtained as a result of workbook.add_style({...})."
         end
-        @io << Row.new(row.map{|value| [value, common_cell_style]}, @rownum, options).to_xml
+        if custom_height.nil?
+          @io << Row.new(row.map{|value| [value, common_cell_style]}, @rownum, options).to_xml
+        else
+          if custom_height < 0
+            raise "Invalid custom_height value (#{custom_height})."
+          end
+          @io << Row.new(row.map{|value| [value, common_cell_style, custom_height]}, @rownum, options).to_xml
+        end
       end
       @rownum += 1
     end

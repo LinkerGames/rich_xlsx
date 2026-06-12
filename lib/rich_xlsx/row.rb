@@ -42,17 +42,25 @@ module RichXlsx
         cid = "#{column}#{@rownum}"
         column.next!
         style = nil
+        custom_height_attr = nil
         if value.is_a?(Array)
-          if value.size != 2
-            raise "The [value, format] tuple should be an array with exactly 2 elements."
+          if (value.size < 2) || (value.size > 3)
+            raise "You can pass value OR [value, format] OR [value, format, custom_height] for each cell in the row."
           end
           format_index = value[1]
           if (!format_index.is_a?(Numeric)) || (format_index < 0)
             raise "Invalid format index #{format_index}."
           end
+          custom_height = value[2]
+          if (!custom_height.nil?) && ((!custom_height.is_a?(Numeric) || (custom_height < 0)))
+            raise "Invalid custom_height value (#{custom_height})."
+          end
           value = value[0]
           if format_index != 0
             style = " s=\"#{format_index.to_i}\""
+          end
+          if !custom_height.nil?
+            custom_height_attr = %( customHeight="#{custom_height}")
           end
         end
         
@@ -73,15 +81,15 @@ module RichXlsx
         
         case value
         when Numeric
-          xml << %Q{<c r="#{cid}"#{style} t="n"><v>#{value}</v></c>}
+          xml << %Q{<c r="#{cid}"#{style}#{custom_height_attr} t="n"><v>#{value}</v></c>}
         when TrueClass, FalseClass
-          xml << %Q{<c r="#{cid}"#{style} t="b"><v>#{value ? 1 : 0}</v></c>}
+          xml << %Q{<c r="#{cid}"#{style}#{custom_height_attr} t="b"><v>#{value ? 1 : 0}</v></c>}
         when Time
-          xml << %Q{<c r="#{cid}"#{style}><v>#{time_to_oa_date(value)}</v></c>}
+          xml << %Q{<c r="#{cid}"#{style}#{custom_height_attr}><v>#{time_to_oa_date(value)}</v></c>}
         when DateTime
-          xml << %Q{<c r="#{cid}"#{style}><v>#{datetime_to_oa_date(value)}</v></c>}
+          xml << %Q{<c r="#{cid}"#{style}#{custom_height_attr}><v>#{datetime_to_oa_date(value)}</v></c>}
         when Date
-          xml << %Q{<c r="#{cid}"#{style}><v>#{date_to_oa_date(value)}</v></c>}
+          xml << %Q{<c r="#{cid}"#{style}#{custom_height_attr}><v>#{date_to_oa_date(value)}</v></c>}
         else
           value = value.to_s
 
@@ -89,9 +97,9 @@ module RichXlsx
             value = value.encode(ENCODING) if value.encoding != ENCODING
 
             if @sst
-              xml << %Q{<c r="#{cid}"#{style} t="s"><v>#{@sst[value]}</v></c>}
+              xml << %Q{<c r="#{cid}"#{style}#{custom_height_attr} t="s"><v>#{@sst[value]}</v></c>}
             else
-              xml << %Q{<c r="#{cid}"#{style} t="inlineStr"><is><t>#{XML.escape_value(value)}</t></is></c>}
+              xml << %Q{<c r="#{cid}"#{style}#{custom_height_attr} t="inlineStr"><is><t>#{XML.escape_value(value)}</t></is></c>}
             end
           end
         end
