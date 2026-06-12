@@ -239,7 +239,7 @@ module RichXlsx
       sst = use_sst ? @sst : nil
 
       sheet_id = @worksheets.size + 1
-      name = name || options[:name] || "Sheet#{sheet_id}"
+      name = (name || options[:name] || "Sheet#{sheet_id}")[0..30]
 
       @writer.add_file "xl/worksheets/sheet#{sheet_id}.xml"
 
