@@ -11,10 +11,13 @@ module RichXlsx
       @options = options
       @has_header_row = options.delete(:has_header_row)
       @merge_cells = []
-      write_header
+      @frozen_rows = 0
+      @frozen_columns = 0
+      @header_written = false
     end
 
     def <<(row, common_cell_style = nil, custom_height = nil)
+      ensure_header
       options = @has_header_row && @rownum == 1 ? @options.merge(:is_header => true) : @options
       if common_cell_style.nil?
         @io << Row.new(row, @rownum, options).to_xml
@@ -41,7 +44,16 @@ module RichXlsx
     
     alias_method :merge_cells, :merge
     
+    def freeze_pane(frozen_columns, frozen_rows)
+      if @header_written
+        raise "worksheet.freeze_pane can be called only before the header is written which is before the first worksheet row is added."
+      end
+      @frozen_columns = [frozen_columns.to_i, 0].max
+      @frozen_rows = [frozen_rows.to_i, 0].max
+    end
+    
     def close
+      ensure_header
       write_footer
       @closed = true
     end
@@ -58,18 +70,37 @@ module RichXlsx
       @options[:name]
     end
 
+    def self.xy_to_cell(x, y)
+      col_index = x
+      row_index = y
+      col_letters = +""
+      while col_index > 0
+        col_index, remainder = (col_index - 1).divmod(26)
+        col_letters.prepend((65 + remainder).chr)
+      end
+      "#{col_letters}#{row_index}"
+    end
+    
     private
-
-    def write_header
+    
+    def ensure_header
+      if @header_written
+        return
+      end
       @io << XML.header
       @io << '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
 
+      if (@frozen_columns > 0) || (@frozen_rows > 0)
+        @io << %(<sheetViews><sheetView workbookViewId="0"><pane xSplit="#{@frozen_columns}" ySplit="#{@frozen_rows}" topLeftCell="#{self.class.xy_to_cell(@frozen_columns + 1, @frozen_rows + 1)}" state="frozen"/></sheetView></sheetViews>)
+      end
+      
       columns = Array(@options[:columns])
       unless columns.empty?
         @io << Columns.new(columns).to_xml
       end
 
       @io << '<sheetData>'
+      @header_written = true
     end
 
     def write_footer
