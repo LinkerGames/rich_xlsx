@@ -11,7 +11,7 @@ module RichXlsx
       ws.close
       expected = \
         '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'"\r\n" \
-        '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData></sheetData></worksheet>'
+        '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheetData></sheetData></worksheet>'
       assert_equal expected, io.string
     end
 
@@ -23,7 +23,7 @@ module RichXlsx
       ws.close
       expected = \
         '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'"\r\n" \
-        '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData>' \
+        '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheetData>' \
           '<row r="1"><c r="A1" t="inlineStr"><is><t>foo</t></is></c></row>' \
           '<row r="2"><c r="A2" t="inlineStr"><is><t>bar</t></is></c></row>' \
         '</sheetData></worksheet>'
@@ -38,7 +38,7 @@ module RichXlsx
       ws.close
       expected = \
         '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'"\r\n" \
-        '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData>' \
+        '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheetData>' \
           '<row r="1"><c r="A1" t="s"><v>0</v></c></row>' \
         '</sheetData></worksheet>'
       assert_equal expected, io.string
@@ -51,7 +51,7 @@ module RichXlsx
       ws.close
       expected = \
         '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'"\r\n" \
-        '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData>' \
+        '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheetData>' \
           '<row r="1"><c r="A1" t="n"><v>1.5</v></c></row>' \
         '</sheetData></worksheet>'
       assert_equal expected, io.string
@@ -65,7 +65,7 @@ module RichXlsx
       ws.close
       expected = \
         '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'"\r\n" \
-        '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData>' \
+        '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheetData>' \
           '<row r="1"><c r="A1" s="3" t="inlineStr"><is><t>header</t></is></c></row>' \
           '<row r="2"><c r="A2" t="inlineStr"><is><t>not header</t></is></c></row>' \
         '</sheetData></worksheet>'
@@ -78,7 +78,7 @@ module RichXlsx
       ws.close
       expected = \
         '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'"\r\n" \
-        '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><cols>' \
+        '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><cols>' \
           '<col min="1" max="1"/>' \
           '<col min="2" max="2"/>' \
           '<col min="3" max="3" width="42" customWidth="1"/>' \
@@ -95,7 +95,7 @@ module RichXlsx
       ws.close
       expected = \
         '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'"\r\n" \
-        '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><cols>' \
+        '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><cols>' \
           '<col min="1" max="1"/>' \
           '<col min="2" max="2"/>' \
           '<col min="3" max="3" width="42" customWidth="1"/>' \
@@ -131,7 +131,7 @@ module RichXlsx
       ws.close
       expected = \
         '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'"\r\n" \
-        '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetViews><sheetView workbookViewId="0"><pane xSplit="2" ySplit="3" topLeftCell="C4" state="frozen"/></sheetView></sheetViews><cols>' \
+        '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheetViews><sheetView workbookViewId="0"><pane xSplit="2" ySplit="3" topLeftCell="C4" state="frozen"/></sheetView></sheetViews><cols>' \
           '<col min="1" max="1"/>' \
           '<col min="2" max="2"/>' \
           '<col min="3" max="3"/>' \
@@ -146,6 +146,69 @@ module RichXlsx
           '<row r="5"><c r="A5" t="inlineStr"><is><t>A5</t></is></c><c r="B5" t="inlineStr"><is><t>B5</t></is></c><c r="C5" t="inlineStr"><is><t>C5</t></is></c><c r="D5" t="inlineStr"><is><t>D5</t></is></c><c r="E5" t="inlineStr"><is><t>E5</t></is></c></row>' \
         '</sheetData></worksheet>'
       assert_equal expected, io.string
+    end
+
+    def test_cell_to_xy
+      assert_equal [1, 1], Worksheet.cell_to_xy('A1')
+      assert_equal [2, 3], Worksheet.cell_to_xy('B3')
+      assert_equal [26, 10], Worksheet.cell_to_xy('Z10')
+      assert_equal [27, 1], Worksheet.cell_to_xy('AA1')
+      assert_equal [16384, 1048576], Worksheet.cell_to_xy('XFD1048576')
+      [[1, 1], [26, 7], [27, 2], [52, 9], [703, 100], [16384, 1]].each do |x, y|
+        assert_equal [x, y], Worksheet.cell_to_xy(Worksheet.xy_to_cell(x, y))
+      end
+    end
+
+    def test_cell_to_xy_with_invalid_reference
+      ['', 'A', '1', 'a1', 'A0', 'A01', 'B 3', 'ABCD1', nil].each do |ref|
+        assert_raises(Error) { Worksheet.cell_to_xy(ref) }
+      end
+    end
+
+    def test_worksheet_without_comments_has_no_legacy_drawing
+      io = StringIO.new
+      ws = Worksheet.new(io)
+      ws << ['foo']
+      ws.close
+      refute_includes io.string, 'legacyDrawing'
+      assert_equal [], ws.comments
+    end
+
+    def test_add_comment
+      io = StringIO.new
+      ws = Worksheet.new(io)
+      ws << ['foo', 'bar']
+      ws.add_comment('B1', 'About bar', author: 'Alice')
+      ws.add_comment('A2', 'A comment for a row that comes later')
+      ws << ['baz']
+      ws.merge('A1', 'A2')
+      ws.close
+      expected = \
+        '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'"\r\n" \
+        '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheetData>' \
+          '<row r="1"><c r="A1" t="inlineStr"><is><t>foo</t></is></c><c r="B1" t="inlineStr"><is><t>bar</t></is></c></row>' \
+          '<row r="2"><c r="A2" t="inlineStr"><is><t>baz</t></is></c></row>' \
+        '</sheetData>' \
+        '<mergeCells><mergeCell ref="A1:A2"/></mergeCells>' \
+        '<legacyDrawing r:id="rId2"/>' \
+        '</worksheet>'
+      assert_equal expected, io.string
+      expected_comments = [
+        {ref: 'B1', x: 2, y: 1, text: 'About bar', author: 'Alice'},
+        {ref: 'A2', x: 1, y: 2, text: 'A comment for a row that comes later', author: nil}
+      ]
+      assert_equal expected_comments, ws.comments
+    end
+
+    def test_add_comment_errors
+      ws = Worksheet.new(StringIO.new)
+      assert_raises(Error) { ws.add_comment('not a cell', 'text') }
+      assert_raises(Error) { ws.add_comment('A1', '') }
+      assert_raises(Error) { ws.add_comment('A1', nil) }
+      ws.add_comment('A1', 'text')
+      assert_raises(Error) { ws.add_comment('A1', 'another text') }
+      ws.close
+      assert_raises(Error) { ws.add_comment('B1', 'text') }
     end
   end
 end

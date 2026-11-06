@@ -1,9 +1,15 @@
 # frozen_string_literal: true
+require_relative "errors.rb"
 require_relative "xml.rb"
 require_relative "row.rb"
+require_relative "comments.rb"
 
 module RichXlsx
   class Worksheet
+    CELL_REFERENCE_REGEXP = /\A([A-Z]{1,3})([1-9][0-9]*)\z/.freeze
+
+    attr_reader :comments
+
     def initialize(io, options = {})
       @io = io
       @rownum = 1
@@ -14,6 +20,8 @@ module RichXlsx
       @frozen_rows = 0
       @frozen_columns = 0
       @header_written = false
+      @comments = []
+      @comment_refs = {}
     end
 
     def <<(row, common_cell_style = nil, custom_height = nil)
@@ -44,6 +52,27 @@ module RichXlsx
     
     alias_method :merge_cells, :merge
     
+    # Adds a comment (note) to a cell, e.g. worksheet.add_comment('B6', 'Some explanation').
+    # The cell may be in a row that has already been written or one that will be written later.
+    # author: shown by Excel; defaults to the :comment_author workbook option.
+    def add_comment(ref, text, author: nil)
+      if @closed
+        raise Error, "Comments can't be added to a closed worksheet."
+      end
+      ref = ref.to_s
+      x, y = self.class.cell_to_xy(ref)
+      text = text.to_s
+      if text.empty?
+        raise Error, "The comment text for cell #{ref} is empty."
+      end
+      if @comment_refs.key?(ref)
+        raise Error, "Cell #{ref} already has a comment."
+      end
+      @comment_refs[ref] = true
+      @comments << {ref: ref, x: x, y: y, text: text, author: author}.freeze
+      nil
+    end
+
     def freeze_pane(frozen_columns, frozen_rows)
       if @header_written
         raise "worksheet.freeze_pane can be called only before the header is written which is before the first worksheet row is added."
@@ -81,6 +110,16 @@ module RichXlsx
       "#{col_letters}#{row_index}"
     end
     
+    # Converts "B3" to [2, 3] (1-based column and row). The reverse of xy_to_cell.
+    def self.cell_to_xy(ref)
+      match = CELL_REFERENCE_REGEXP.match(ref.to_s)
+      if match.nil?
+        raise Error, "Invalid cell reference #{ref.inspect}."
+      end
+      column = match[1].each_char.reduce(0) { |acc, ch| (acc * 26) + (ch.ord - 64) }
+      return column, match[2].to_i
+    end
+
     private
     
     def ensure_header
@@ -88,7 +127,7 @@ module RichXlsx
         return
       end
       @io << XML.header
-      @io << '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
+      @io << '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">'
 
       if (@frozen_columns > 0) || (@frozen_rows > 0)
         @io << %(<sheetViews><sheetView workbookViewId="0"><pane xSplit="#{@frozen_columns}" ySplit="#{@frozen_rows}" topLeftCell="#{self.class.xy_to_cell(@frozen_columns + 1, @frozen_rows + 1)}" state="frozen"/></sheetView></sheetViews>)
@@ -111,6 +150,10 @@ module RichXlsx
           @io << %(<mergeCell ref="#{XML.escape_attr(ref)}"/>)
         end
         @io << '</mergeCells>'
+      end
+      unless @comments.empty?
+        # legacyDrawing is one of the last elements of a worksheet - it must come after mergeCells.
+        @io << %(<legacyDrawing r:id="#{Comments::VML_DRAWING_RELATIONSHIP_ID}"/>)
       end
       @io << '</worksheet>'
     end

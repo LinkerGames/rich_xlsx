@@ -77,7 +77,7 @@ module RichXlsx
       expected = {
         'xl/worksheets/sheet1.xml' =>
           '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'"\r\n" \
-          '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">' \
+          '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">' \
             '<sheetData></sheetData>' \
           '</worksheet>',
         'xl/workbook.xml' =>
@@ -112,7 +112,7 @@ module RichXlsx
       expected = {
         'xl/worksheets/sheet1.xml' =>
           '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'"\r\n" \
-          '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">' \
+          '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">' \
             '<sheetData></sheetData>' \
           '</worksheet>',
         'xl/workbook.xml' =>
@@ -147,7 +147,7 @@ module RichXlsx
       expected = {
         'xl/worksheets/sheet1.xml' =>
           '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'"\r\n" \
-          '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">' \
+          '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">' \
             '<sheetData><row r="1"><c r="A1" t="inlineStr"><is><t>foo</t></is></c></row></sheetData>' \
           '</worksheet>',
         'xl/workbook.xml' =>
@@ -182,7 +182,7 @@ module RichXlsx
       expected = {
         'xl/worksheets/sheet1.xml' =>
           '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'"\r\n" \
-          '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">' \
+          '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">' \
             '<sheetData>' \
               '<row r="1"><c r="A1" t="s"><v>0</v></c></row>' \
             '</sheetData>' \
@@ -269,10 +269,10 @@ module RichXlsx
           '</Relationships>',
         'xl/worksheets/sheet1.xml' =>
           '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'"\r\n" \
-          '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData></sheetData></worksheet>',
+          '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheetData></sheetData></worksheet>',
         'xl/worksheets/sheet2.xml' =>
           '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'"\r\n" \
-          '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData></sheetData></worksheet>'
+          '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheetData></sheetData></worksheet>'
       }
       actual = iow_spy
       expected.keys.each do |path|
@@ -353,7 +353,7 @@ module RichXlsx
 
       expected = \
         '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'"\r\n" \
-        '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><cols>' \
+        '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><cols>' \
           '<col min="1" max="1"/>' \
           '<col min="2" max="2"/>' \
           '<col min="3" max="3" width="42" customWidth="1"/>' \
@@ -375,7 +375,7 @@ module RichXlsx
 
       expected = \
         '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'"\r\n" \
-        '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><cols>' \
+        '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><cols>' \
           '<col min="1" max="1"/>' \
           '<col min="2" max="2"/>' \
           '<col min="3" max="3" width="42" customWidth="1"/>' \
@@ -741,7 +741,7 @@ module RichXlsx
       worksheet_xml = XML.strip(iow_spy['xl/worksheets/sheet1.xml'])
       expected_worksheet_xml = XML.strip(<<-XML)
         <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-        <worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+        <worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
           <cols>
             <col min="1" max="1" width="12" customWidth="1"/>
             <col min="2" max="2" width="20" customWidth="1"/>
@@ -818,6 +818,148 @@ module RichXlsx
       assert_equal false, tempfile.closed?
     ensure
       tempfile && tempfile.close!
+    end
+
+    def test_workbook_with_comments
+      iow_spy = io_wrapper_spy
+      Workbook.open(iow_spy, comment_author: 'Default author') do |wb|
+        wb.write_worksheet do |ws|
+          ws << ['foo', 'bar']
+          ws.add_comment('B1', "First line & <second> line\nThird line")
+          ws.add_comment('A1', 'By Alice', author: 'Alice')
+        end
+      end
+      expected = {
+        'xl/worksheets/sheet1.xml' =>
+          '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'"\r\n" \
+          '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">' \
+            '<sheetData><row r="1"><c r="A1" t="inlineStr"><is><t>foo</t></is></c><c r="B1" t="inlineStr"><is><t>bar</t></is></c></row></sheetData>' \
+            '<legacyDrawing r:id="rId2"/>' \
+          '</worksheet>',
+        'xl/worksheets/_rels/sheet1.xml.rels' =>
+          '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'"\r\n" \
+          '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' \
+            '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/comments" Target="../comments1.xml"/>' \
+            '<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/vmlDrawing" Target="../drawings/vmlDrawing1.vml"/>' \
+          '</Relationships>',
+        'xl/comments1.xml' =>
+          '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'"\r\n" \
+          '<comments xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">' \
+            '<authors><author>Default author</author><author>Alice</author></authors>' \
+            '<commentList>' \
+              '<comment ref="B1" authorId="0"><text><r><rPr><sz val="9"/><rFont val="Tahoma"/></rPr><t xml:space="preserve">First line &amp; &lt;second&gt; line'"\n"'Third line</t></r></text></comment>' \
+              '<comment ref="A1" authorId="1"><text><r><rPr><sz val="9"/><rFont val="Tahoma"/></rPr><t xml:space="preserve">By Alice</t></r></text></comment>' \
+            '</commentList>' \
+          '</comments>',
+        'xl/drawings/vmlDrawing1.vml' =>
+          '<xml xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel">' \
+            '<o:shapelayout v:ext="edit"><o:idmap v:ext="edit" data="1"/></o:shapelayout>' \
+            '<v:shapetype id="_x0000_t202" coordsize="21600,21600" o:spt="202" path="m,l,21600r21600,l21600,xe">' \
+              '<v:stroke joinstyle="miter"/><v:path gradientshapeok="t" o:connecttype="rect"/>' \
+            '</v:shapetype>' \
+            '<v:shape id="_x0000_s1025" type="#_x0000_t202" style="position:absolute;margin-left:80pt;margin-top:2pt;width:200pt;height:36pt;z-index:1;visibility:hidden" fillcolor="#ffffe1" o:insetmode="auto">' \
+              '<v:fill color2="#ffffe1"/><v:shadow on="t" color="black" obscured="t"/><v:path o:connecttype="none"/>' \
+              '<v:textbox style="mso-direction-alt:auto"><div style="text-align:left"></div></v:textbox>' \
+              '<x:ClientData ObjectType="Note"><x:MoveWithCells/><x:SizeWithCells/>' \
+                '<x:Anchor>2, 15, 0, 10, 5, 15, 3, 4</x:Anchor><x:AutoFill>False</x:AutoFill><x:Row>0</x:Row><x:Column>1</x:Column>' \
+              '</x:ClientData>' \
+            '</v:shape>' \
+            '<v:shape id="_x0000_s1026" type="#_x0000_t202" style="position:absolute;margin-left:80pt;margin-top:2pt;width:200pt;height:24pt;z-index:2;visibility:hidden" fillcolor="#ffffe1" o:insetmode="auto">' \
+              '<v:fill color2="#ffffe1"/><v:shadow on="t" color="black" obscured="t"/><v:path o:connecttype="none"/>' \
+              '<v:textbox style="mso-direction-alt:auto"><div style="text-align:left"></div></v:textbox>' \
+              '<x:ClientData ObjectType="Note"><x:MoveWithCells/><x:SizeWithCells/>' \
+                '<x:Anchor>1, 15, 0, 10, 4, 15, 2, 4</x:Anchor><x:AutoFill>False</x:AutoFill><x:Row>0</x:Row><x:Column>0</x:Column>' \
+              '</x:ClientData>' \
+            '</v:shape>' \
+          '</xml>',
+        '[Content_Types].xml' =>
+          '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'"\r\n" \
+          '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">' \
+            '<Default Extension="xml" ContentType="application/xml"/>' \
+            '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>' \
+            '<Default Extension="vml" ContentType="application/vnd.openxmlformats-officedocument.vmlDrawing"/>' \
+            '<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>' \
+            '<Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>' \
+            '<Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>' \
+            '<Override PartName="/xl/comments1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.comments+xml"/>' \
+          '</Types>'
+      }
+      expected.keys.each do |path|
+        assert_equal expected[path], iow_spy[path], path
+      end
+    end
+
+    def test_comments_on_some_of_several_worksheets
+      iow_spy = io_wrapper_spy
+      Workbook.open(iow_spy) do |wb|
+        wb.write_worksheet { |ws| ws << ['no comments here'] }
+        wb.write_worksheet { |ws| ws.add_comment('C3', 'On sheet 2') }
+        ws = wb.add_worksheet
+        ws.add_comment('A1', 'On sheet 3, closed manually')
+        ws.close
+      end
+      refute_includes iow_spy['xl/worksheets/sheet1.xml'], 'legacyDrawing'
+      assert_raises(KeyError) { iow_spy['xl/worksheets/_rels/sheet1.xml.rels'] }
+      assert_raises(KeyError) { iow_spy['xl/comments1.xml'] }
+      assert_includes iow_spy['xl/worksheets/sheet2.xml'], '<legacyDrawing r:id="rId2"/>'
+      assert_includes iow_spy['xl/worksheets/sheet3.xml'], '<legacyDrawing r:id="rId2"/>'
+      assert_includes iow_spy['xl/comments2.xml'], '<comment ref="C3" authorId="0">'
+      assert_includes iow_spy['xl/comments3.xml'], '<comment ref="A1" authorId="0">'
+      assert_includes iow_spy['xl/comments2.xml'], '<authors><author></author></authors>'
+      # VML id blocks and shape ids must be unique within the workbook.
+      assert_includes iow_spy['xl/drawings/vmlDrawing2.vml'], '<o:idmap v:ext="edit" data="1"/>'
+      assert_includes iow_spy['xl/drawings/vmlDrawing2.vml'], 'id="_x0000_s1025"'
+      assert_includes iow_spy['xl/drawings/vmlDrawing3.vml'], '<o:idmap v:ext="edit" data="2"/>'
+      assert_includes iow_spy['xl/drawings/vmlDrawing3.vml'], 'id="_x0000_s2049"'
+      assert_includes iow_spy['xl/worksheets/_rels/sheet3.xml.rels'], 'Target="../comments3.xml"'
+      content_types = iow_spy['[Content_Types].xml']
+      assert_equal 1, content_types.scan('Extension="vml"').size
+      refute_includes content_types, '/xl/comments1.xml'
+      assert_includes content_types, '<Override PartName="/xl/comments2.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.comments+xml"/>'
+      assert_includes content_types, '<Override PartName="/xl/comments3.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.comments+xml"/>'
+    end
+
+    def test_more_comments_than_one_vml_id_block
+      iow_spy = io_wrapper_spy
+      Workbook.open(iow_spy) do |wb|
+        wb.write_worksheet do |ws|
+          1100.times { |i| ws.add_comment("A#{i + 1}", "Comment #{i + 1}") }
+        end
+        wb.write_worksheet { |ws| ws.add_comment('A1', 'Next sheet') }
+      end
+      vml = iow_spy['xl/drawings/vmlDrawing1.vml']
+      assert_includes vml, '<o:idmap v:ext="edit" data="1,2"/>'
+      shape_ids = vml.scan(/<v:shape id="_x0000_s(\d+)"/).flatten.map(&:to_i)
+      assert_equal 1100, shape_ids.uniq.size
+      assert_equal 1025, shape_ids.first
+      assert_equal 1024 + 1023, shape_ids[1022]
+      assert_equal 2049, shape_ids[1023]
+      assert_includes iow_spy['xl/drawings/vmlDrawing2.vml'], '<o:idmap v:ext="edit" data="3"/>'
+      assert_includes iow_spy['xl/drawings/vmlDrawing2.vml'], 'id="_x0000_s3073"'
+    end
+
+    def test_workbook_without_comments_has_no_comment_parts
+      iow_spy = io_wrapper_spy
+      Workbook.open(iow_spy) { |wb| wb.write_worksheet { |ws| ws << ['foo'] } }
+      refute_includes iow_spy['[Content_Types].xml'], 'vml'
+      refute_includes iow_spy['[Content_Types].xml'], 'comments'
+      refute_includes iow_spy['xl/worksheets/sheet1.xml'], 'legacyDrawing'
+    end
+
+    def test_comments_in_a_real_zip_file
+      require 'zip'
+      io = StringIO.new
+      Workbook.open(io) do |wb|
+        wb.write_worksheet { |ws| ws << ['foo']; ws.add_comment('A1', 'Hello') }
+      end
+      names = []
+      Zip::File.open_buffer(StringIO.new(io.string)) do |zip|
+        zip.each { |entry| names << entry.name }
+        assert_includes zip.read('xl/comments1.xml'), 'Hello'
+      end
+      ['xl/comments1.xml', 'xl/drawings/vmlDrawing1.vml', 'xl/worksheets/_rels/sheet1.xml.rels'].each do |name|
+        assert_includes names, name
+      end
     end
 
     private

@@ -78,6 +78,16 @@ worksheet = xls.add_worksheet(name: 'SheetWithoutBlock')
 worksheet << ['some', 'data']
 worksheet.close
 
+# Cell comments (notes). A comment can be added for any cell of the worksheet,
+# before or after its row is written. The author is optional; the default comes
+# from the :comment_author workbook option.
+xlsx = RichXlsx::Workbook.new(io, comment_author: 'Reports')
+xlsx.write_worksheet 'SheetWithComments' do |sheet|
+  sheet << ['Revenue', 1234.5]
+  sheet.add_comment('A1', "Net revenue without VAT.\nReturns are not deducted.")
+  sheet.add_comment(RichXlsx::Worksheet.xy_to_cell(2, 1), 'In EUR', author: 'Alice')
+end
+
 # Writes metadata and ZIP archive central directory
 xlsx.close
 # Close IO object

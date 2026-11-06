@@ -4,6 +4,7 @@ require_relative "errors.rb"
 require_relative "xml.rb"
 require_relative "shared_string_table.rb"
 require_relative "worksheet.rb"
+require_relative "comments.rb"
 require_relative "zip_kit_writer.rb"
 
 module RichXlsx
@@ -132,6 +133,7 @@ module RichXlsx
         }.freeze
       ]
       @worksheed_added = false
+      @comments = []
     end
 
     def add_style(hash)
@@ -214,6 +216,7 @@ module RichXlsx
     end
 
     def close
+      write_comments
       write_workbook
       write_styles
       write_sst unless @sst.empty?
@@ -247,6 +250,19 @@ module RichXlsx
       @worksheets << worksheet
       @worksheed_added = true
       worksheet
+    end
+
+    # Writes the comment parts of every worksheet that has comments.
+    # Done when the workbook is closed, so it also covers worksheets created with add_worksheet and closed manually.
+    def write_comments
+      next_id_block = 1
+      @worksheets.each do |worksheet|
+        next if worksheet.comments.empty?
+        comments = Comments.new(worksheet.id, worksheet.comments, next_id_block, @options.fetch(:comment_author, ''))
+        next_id_block += comments.id_blocks
+        comments.write(@writer)
+        @comments << comments
+      end
     end
 
     def write_root_rels
@@ -435,12 +451,18 @@ module RichXlsx
         <Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
           <Default Extension="xml" ContentType="application/xml"/>
           <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
+      XML
+      @writer << '<Default Extension="vml" ContentType="application/vnd.openxmlformats-officedocument.vmlDrawing"/>' unless @comments.empty?
+      @writer << XML.strip(<<-XML)
           <Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>
           <Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>
       XML
       @writer << '<Override PartName="/xl/sharedStrings.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sharedStrings+xml"/>' unless @sst.empty?
       @worksheets.each do |worksheet|
         @writer << %'<Override PartName="/xl/worksheets/sheet#{worksheet.id}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>'
+      end
+      @comments.each do |comments|
+        @writer << %'<Override PartName="/#{comments.comments_path}" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.comments+xml"/>'
       end
       @writer << '</Types>'
     end
