@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.1.0 (unreleased)
+## 1.1.0 (2026-11-17)
 
 - Added cell comments (notes): `Worksheet#add_comment(ref, text, author: nil)` and the `:comment_author` workbook option.
 - Added `Worksheet.cell_to_xy`, the reverse of `Worksheet.xy_to_cell`.
